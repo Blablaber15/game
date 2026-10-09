@@ -7,6 +7,10 @@ import threading
 import time
 from config import *
 
+RESEND_WAIT_MINUTES = 10
+RESEND_BONUS_COST = 5
+BONUS_PER_MISS = 1
+
 bot = TeleBot(API_TOKEN)
 
 def gen_markup(id):
@@ -41,13 +45,13 @@ def handle_start(message):
         bot.reply_to(message, "Ты уже зарегестрирован!")
     else:
         manager.add_user(user_id, message.from_user.username)
-        bot.reply_to(message, """Привет! Добро пожаловать! 
+        bot.reply_to(message, f"""Привет! Добро пожаловать! 
 Тебя успешно зарегистрировали!
 Каждый час тебе будут приходить новые картинки и у тебя будет шанс их получить!
 Для этого нужно быстрее всех нажать на кнопку 'Получить!'
 
 Только три первых пользователя получат картинку!
-Если выигранная картинка не пришла, отправь /getprize через 5 минут.)""")
+Если выигранная картинка не пришла, отправь /getprize через {RESEND_WAIT_MINUTES} минут.)""")
 
 @bot.message_handler(commands=['rating'])
 def handle_rating(message):
@@ -89,7 +93,7 @@ def handle_get_prize(message):
         return
 
     prize_id, img, win_time = prize
-    available_at = datetime.strptime(win_time, '%Y-%m-%d %H:%M:%S') + timedelta(minutes=5)
+    available_at = datetime.strptime(win_time, '%Y-%m-%d %H:%M:%S') + timedelta(minutes=RESEND_WAIT_MINUTES)
     seconds_left = int((available_at - datetime.now()).total_seconds())
     if seconds_left > 0:
         minutes, seconds = divmod(seconds_left, 60)
