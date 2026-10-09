@@ -46,7 +46,8 @@ def handle_start(message):
 Каждый час тебе будут приходить новые картинки и у тебя будет шанс их получить!
 Для этого нужно быстрее всех нажать на кнопку 'Получить!'
 
-Только три первых пользователя получат картинку!)""")
+Только три первых пользователя получат картинку!
+Если выигранная картинка не пришла, отправь /getprize через 5 минут.)""")
 
 @bot.message_handler(commands=['rating'])
 def handle_rating(message):
@@ -70,6 +71,7 @@ def callback_query(call):
             img = manager.get_prize_img(int(prize_id))
             with open(f'img/{img}', 'rb') as photo:
                 bot.send_photo(user_id, photo, caption="Поздравляем! Ты получил картинку!")
+            manager.mark_prize_delivered(user_id, int(prize_id))
         else:
             bot.send_message(user_id, 'Ты уже получил картинку!')
     else:
@@ -98,7 +100,17 @@ def handle_get_prize(message):
         bot.send_photo(user_id, photo, caption=f'Твой приз #{prize_id}')
     manager.mark_prize_delivered(user_id, prize_id)
 
+@bot.message_handler(commands=['getmyscore'])
+def handle_get_my_score(message):
+    user_id = message.chat.id
+    winners_img = manager.get_winners_img(user_id)
+    if not winners_img:
+        bot.reply_to(message, "У тебя пока нет выигранных призов.")
+        return
 
+    img_list = [img[0] for img in winners_img]
+    img_str = "\n".join(img_list)
+    bot.reply_to(message, f"Твои выигранные призы в виде коллажа:\n{create_collage([f'img/{x}' for x in img_list])}")
 def polling_thread():
     bot.polling(none_stop=True)
 
